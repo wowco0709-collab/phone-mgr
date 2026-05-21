@@ -412,14 +412,7 @@ tbody tr:hover td{background:#fafbff}
 
 <script>
 // ── 공유 설정 (Gun.js — 계정 불필요) ─────────────────────────────
-var ROOM_KEY=(function(){
-  var m=location.hash.match(/#room=([a-z0-9]+)/);
-  if(m){localStorage.setItem('gunRoom',m[1]);return m[1];}
-  var k=localStorage.getItem('gunRoom');
-  if(!k){k=Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,10);localStorage.setItem('gunRoom',k);}
-  history.replaceState(null,'',location.pathname+location.search+'#room='+k);
-  return k;
-})();
+var ROOM_KEY="busandaesung2026";
 var gun=null,useGun=false,gunFloorToken=0,gunTimesToken=0;
 var issuanceList={};
 var ISS_KEY='iss_'+ROOM_KEY;
@@ -459,7 +452,7 @@ function initGun(){
   document.getElementById('bn').style.display='block';
   document.getElementById('connTx').textContent='연결 중...';
   load('https://cdn.jsdelivr.net/npm/gun/gun.js',function(){
-    gun=Gun(['https://gun-manhattan.herokuapp.com/gun','https://peer.wallie.io/gun']);
+    gun=Gun(['https://peer.wallie.io/gun','https://gun-us.erickmerchant.com/gun','https://gundb-relay-mlccl.ondigitalocean.app/gun']);
     useGun=true;
     document.getElementById('dotEl').className='dot on';
     document.getElementById('connTx').textContent='온라인';
