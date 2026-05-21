@@ -411,11 +411,12 @@ tbody tr:hover td{background:#fafbff}
 </div>
 
 <script>
-// ── 공유 설정 (Gun.js — 계정 불필요) ─────────────────────────────
-var ROOM_KEY="busandaesung2026";
-var gun=null,useGun=false,gunFloorToken=0,gunTimesToken=0;
+// ── 공유 설정 (Supabase Realtime) ────────────────────────────────
+var SUPABASE_URL='https://spjlwubwsaevnhioxfqr.supabase.co';
+var SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwamx3dWJ3c2Fldm5oaW94ZnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3Mjg5MjYsImV4cCI6MjA5NDMwNDkyNn0.fJgbQJByMueadKX2FxaVOhETifG8ywIboDWkCxRvJjE';
+var sbClient=null,sbCh=null,isOnline=false;
 var issuanceList={};
-var ISS_KEY='iss_'+ROOM_KEY;
+var ISS_KEY='pm_issuance';
 try{issuanceList=JSON.parse(localStorage.getItem(ISS_KEY)||'{}');}catch(e){issuanceList={};}
 
 // ── 좌석 데이터 ──────────────────────────────────────────────────
@@ -446,71 +447,58 @@ function rtKey(r){return 'rtime_'+date+'_r'+r;}
 
 // ── 초기화 ───────────────────────────────────────────────────────
 document.getElementById('dp').value=date;
-initGun();
-
-function initGun(){
-  document.getElementById('bn').style.display='block';
-  document.getElementById('connTx').textContent='연결 중...';
-  load('https://cdn.jsdelivr.net/npm/gun/gun.js',function(){
-    gun=Gun(['https://peer.wallie.io/gun','https://gun-us.erickmerchant.com/gun','https://gundb-relay-mlccl.ondigitalocean.app/gun']);
-    useGun=true;
-    document.getElementById('dotEl').className='dot on';
-    document.getElementById('connTx').textContent='온라인';
-    document.getElementById('bn').style.display='none';
-    subGunTimes();
-    subGunFloor();
-    subGunIssuance();
-  });
-}
-
-function subGunIssuance(){
-  gun.get(ROOM_KEY).get('issuance').map().on(function(val,sid){
-    if(!sid||typeof sid!=='string'||sid==='_')return;
-    var prev=!!issuanceList[sid];
-    if(val===true){issuanceList[sid]=true;}else{delete issuanceList[sid];}
-    localStorage.setItem(ISS_KEY,JSON.stringify(issuanceList));
-    if(prev!==!!issuanceList[sid]){
-      updBtn(sid,issuanceList[sid]?'발급':((data[sid]||{}).status||''));
-      updStats();
-    }
-  });
-}
+initSync();
 
 function load(url,cb){
   var s=document.createElement('script');
   s.src=url; s.onload=cb; document.head.appendChild(s);
 }
 
-function gunDateKey(){return date.replace(/-/g,'');}
-function subGunTimes(){
-  var token=++gunTimesToken;
-  gun.get(ROOM_KEY).get('att').get(gunDateKey()).get('times').map().on(function(val,rk){
-    if(token!==gunTimesToken)return;
-    if(typeof rk!=='string'||!/^r[1-4]$/.test(rk))return;
-    var r=rk.slice(1);
-    var el=document.getElementById('rt'+r);
-    if(el&&!el.matches(':focus'))el.value=val||'';
-    if(val)localStorage.setItem(rtKey(r),val); else localStorage.removeItem(rtKey(r));
+function initSync(){
+  document.getElementById('bn').style.display='block';
+  document.getElementById('connTx').textContent='연결 중...';
+  load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js',function(){
+    sbClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    sbCh=sbClient.channel('pm-sync-v1');
+    sbCh
+      .on('broadcast',{event:'update'},function(msg){onRemoteUpdate(msg.payload);})
+      .on('broadcast',{event:'req'},function(){setTimeout(broadcastState,Math.random()*400+100);})
+      .subscribe(function(status){
+        isOnline=(status==='SUBSCRIBED');
+        document.getElementById('dotEl').className='dot'+(isOnline?' on':'');
+        document.getElementById('connTx').textContent=isOnline?'온라인':'오프라인';
+        document.getElementById('bn').style.display=isOnline?'none':'block';
+        if(isOnline){
+          data=lsLoad(); render(true); updRoundTimes();
+          sbCh.send({type:'broadcast',event:'req',payload:{}});
+        }
+      });
   });
 }
-function subGunFloor(){
-  var token=++gunFloorToken;
-  data={};
-  render(true);
-  gun.get(ROOM_KEY).get('att').get(gunDateKey()).get('r'+round).get(floor).map().on(function(sd,sid){
-    if(token!==gunFloorToken)return;
-    if(!sd||typeof sd!=='object')return;
-    var prev=data[sid]||{};
-    var next={};
-    if(sd.status&&sd.status!==null)next.status=sd.status;
-    if(sd.note&&sd.note!==null)next.note=sd.note;
-    if(sd.notice===true)next.notice=true;
-    if(Object.keys(next).length)data[sid]=next; else delete data[sid];
-    var ps=(prev.status||''),ns=(next.status||'');
-    if(ps!==ns)updBtn(sid,ns);
-    if(!!prev.notice!==!!next.notice)updNotice(sid,!!next.notice);
-    updStats();
-  });
+
+function broadcastState(){
+  if(!isOnline||!sbCh)return;
+  var times={};
+  for(var i=1;i<=4;i++){var v=localStorage.getItem(rtKey(String(i)));if(v)times['r'+i]=v;}
+  sbCh.send({type:'broadcast',event:'update',payload:{
+    fl:floor,dt:date,rnd:round,d:data,iss:issuanceList,times:times
+  }});
+}
+
+function onRemoteUpdate(p){
+  if(p.times){
+    Object.keys(p.times).forEach(function(rk){
+      var r=rk.slice(1);
+      localStorage.setItem(rtKey(r),p.times[rk]);
+      var el=document.getElementById('rt'+r);
+      if(el&&!el.matches(':focus'))el.value=p.times[rk];
+    });
+  }
+  if(p.iss){issuanceList=p.iss;localStorage.setItem(ISS_KEY,JSON.stringify(issuanceList));}
+  var remKey='att_'+p.dt+'_r'+p.rnd+'_'+p.fl;
+  localStorage.setItem(remKey,JSON.stringify(p.d));
+  if(p.fl===floor&&p.dt===date&&p.rnd===round){data=p.d;render(true);}
+  else{updStats();}
 }
 
 // ── localStorage ─────────────────────────────────────────────────
@@ -546,9 +534,7 @@ function updRoundTimes(){
 function saveRoundTime(r,val){
   if(val){localStorage.setItem(rtKey(r),val);}
   else{localStorage.removeItem(rtKey(r));}
-  if(useGun&&gun){
-    gun.get(ROOM_KEY).get('att').get(gunDateKey()).get('times').get('r'+r).put(val||null);
-  }
+  broadcastState();
 }
 
 // 회차 시간 input 이벤트 바인딩
@@ -682,27 +668,24 @@ function setStatus(sid,st){
   }else{delete data[sid].status;if(!data[sid].note)delete data[sid];}
   updBtn(sid,st);
   updStats();
-  if(useGun&&gun){
-    gun.get(ROOM_KEY).get('att').get(gunDateKey()).get('r'+round).get(floor).get(sid).put({status:st||null});
-  }else{lsSave();}
+  lsSave();
+  broadcastState();
 }
 
 function saveNote(sid,note){
   if(!data[sid])data[sid]={};
   if(note){data[sid].note=note;}
   else{delete data[sid].note;if(!data[sid].status&&!data[sid].notice)delete data[sid];}
-  if(useGun&&gun){
-    gun.get(ROOM_KEY).get('att').get(gunDateKey()).get('r'+round).get(floor).get(sid).put({note:note||null});
-  }else{lsSave();}
+  lsSave();
+  broadcastState();
 }
 
 function saveNotice(sid,checked){
   if(!data[sid])data[sid]={};
   if(checked){data[sid].notice=true;}
   else{delete data[sid].notice;if(!data[sid].status&&!data[sid].note)delete data[sid];}
-  if(useGun&&gun){
-    gun.get(ROOM_KEY).get('att').get(gunDateKey()).get('r'+round).get(floor).get(sid).put({notice:checked?true:null});
-  }else{lsSave();}
+  lsSave();
+  broadcastState();
 }
 
 // ── 탭 & 회차 & 날짜 ─────────────────────────────────────────────
@@ -711,8 +694,7 @@ document.querySelectorAll('.tab').forEach(function(b){
     document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on');});
     b.classList.add('on');
     floor=b.dataset.f;
-    if(useGun&&gun){data={};subGunFloor();}
-    else{data=lsLoad();render(true);}
+    data=lsLoad();render(true);
   });
 });
 
@@ -721,22 +703,20 @@ document.querySelectorAll('.rnd').forEach(function(b){
     document.querySelectorAll('.rnd').forEach(function(x){x.classList.remove('on');});
     b.classList.add('on');
     round=b.dataset.r;
-    if(useGun&&gun){data={};subGunFloor();}
-    else{data=lsLoad();render(true);}
+    data=lsLoad();render(true);
   });
 });
 
 document.getElementById('dp').addEventListener('change',function(){
   date=this.value;
   updRoundTimes();
-  if(useGun&&gun){data={};subGunTimes();subGunFloor();}
-  else{data=lsLoad();render(true);}
+  data=lsLoad();render(true);
 });
 
 // ── 공유 설정 모달 ───────────────────────────────────────────────
 function openCfg(){
   var sb=document.getElementById('cfg-status-box');
-  if(useGun&&gun){
+  if(isOnline){
     sb.className='cfg-status ok';
     sb.textContent='✅ 온라인 — 실시간 공유 중';
   }else{
@@ -744,7 +724,7 @@ function openCfg(){
     sb.textContent='⏳ 연결 중... — 잠시 후 자동 공유됩니다';
   }
   document.getElementById('cur-url-box').textContent=location.href;
-  document.getElementById('cur-room-key').textContent=ROOM_KEY;
+  document.getElementById('cur-room-key').textContent='(자동 공유)';
   document.getElementById('cfg-modal').classList.add('open');
 }
 
@@ -817,22 +797,22 @@ function addIssuanceSeat(){
   var sids=raw.split(/[\s,]+/).filter(Boolean);
   sids.forEach(function(sid){
     issuanceList[sid]=true;
-    if(useGun&&gun){gun.get(ROOM_KEY).get('issuance').get(sid).put(true);}
   });
   localStorage.setItem(ISS_KEY,JSON.stringify(issuanceList));
   inp.value='';
   renderIssuanceList();
   render(true);
   updStats();
+  broadcastState();
 }
 
 function removeIssuanceSeat(sid){
   delete issuanceList[sid];
   localStorage.setItem(ISS_KEY,JSON.stringify(issuanceList));
-  if(useGun&&gun){gun.get(ROOM_KEY).get('issuance').get(sid).put(null);}
   renderIssuanceList();
   updBtn(sid,(data[sid]||{}).status||'');
   updStats();
+  broadcastState();
 }
 
 document.getElementById('iss-modal').addEventListener('click',function(e){
@@ -913,7 +893,6 @@ function processImport(){
     updates[fl][seatId]=st;
   }
 
-  // 각 층 localStorage 로드 → 적용 → 저장 + Gun push
   var total=0;
   Object.keys(updates).forEach(function(fl){
     var key='att_'+date+'_r'+round+'_'+fl;
@@ -924,16 +903,14 @@ function processImport(){
       if(!d[sid])d[sid]={};
       d[sid].status=st;
       total++;
-      if(useGun&&gun){
-        gun.get(ROOM_KEY).get('att').get(gunDateKey()).get('r'+round).get(fl).get(sid).put({status:st});
-      }
     });
     localStorage.setItem(key,JSON.stringify(d));
   });
 
-  // 현재 층 다시 로드
+  // 현재 층 다시 로드 후 브로드캐스트
   data=lsLoad();
   render(true);
+  broadcastState();
 
   var msg='✅ '+total+'명의 상태를 적용했습니다.';
   var flList=Object.keys(updates).map(function(f){return f+'층 '+Object.keys(updates[f]).length+'명';}).join(', ');
