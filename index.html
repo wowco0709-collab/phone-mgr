@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>휴대폰 제출 관리</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Malgun Gothic','맑은 고딕',sans-serif;background:#f0f2f5;min-height:100vh}
+
+.hd{background:linear-gradient(135deg,#1a56db,#1565c0);color:#fff;padding:12px 18px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.hd h1{font-size:16px;font-weight:700}
+.hd-r{display:flex;align-items:center;gap:10px}
+.conn{display:flex;align-items:center;gap:5px;font-size:11px;opacity:.85}
+.dot{width:7px;height:7px;border-radius:50%;background:#888}
+.dot.on{background:#69f0ae}
+input[type=date]{padding:5px 10px;border-radius:6px;border:none;
+  font-size:13px;background:rgba(255,255,255,.92);color:#333;cursor:pointer;font-family:inherit}
+
+.tabs{background:#0d47a1;display:flex;padding:0 14px;
+  position:sticky;top:48px;z-index:199}
+.tab{padding:9px 20px;background:none;border:none;
+  color:rgba(255,255,255,.55);font-size:13px;font-weight:600;
+  cursor:pointer;border-bottom:3px solid transparent;transition:all .2s}
+.tab.on{color:#fff;border-bottom-color:#64b5f6}
+.tab:hover{color:rgba(255,255,255,.85)}
+
+.rounds{background:#fff;border-bottom:2px solid #e8eaed;
+  padding:8px 16px;display:flex;gap:8px;align-items:center;
+  position:sticky;top:89px;z-index:198;flex-wrap:wrap}
+.rlabel{font-size:11px;color:#999;font-weight:600;margin-right:4px}
+.rnd{padding:6px 18px;border-radius:20px;border:1.5px solid #d0d0d0;
+  background:none;color:#888;font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .18s;font-family:inherit;position:relative}
+.rnd:hover{border-color:#1a56db;color:#1a56db}
+.rnd.on{background:#1a56db;border-color:#1a56db;color:#fff;
+  box-shadow:0 2px 8px rgba(26,86,219,.35)}
+.rgrp{display:flex;align-items:center;gap:5px}
+.rtinput{border:1.5px solid #e0e0e0;border-radius:8px;padding:4px 8px;
+  font-size:13px;color:#555;width:150px;background:#f8f9ff;
+  font-family:inherit;cursor:pointer;transition:border-color .15s}
+.rtinput:focus{border-color:#1a56db;outline:none;background:#fff;color:#333}
+.rtinput:hover{border-color:#aac4ff}
+
+.stats{background:#fff;border-bottom:1px solid #e8eaed;
+  padding:8px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+  position:sticky;top:136px;z-index:197}
+.slabel{font-size:11px;color:#888;margin-right:2px}
+.chip{padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600}
+.c조퇴{background:#fff3e0;color:#e65100}
+.c결석{background:#ffebee;color:#c62828}
+.c외출{background:#e3f2fd;color:#1565c0}
+.c발급{background:#f3e5f5;color:#6a1b9a}
+.c미제출{background:#fffde7;color:#f57f17}
+.c등원{background:#e8f5e9;color:#2e7d32}
+.c지각{background:#fce4ec;color:#880e4f}
+.c하원{background:#eceff1;color:#546e7a}
+
+.banner{margin:10px 16px;padding:10px 14px;background:#fff8e1;
+  border-left:4px solid #ffc107;border-radius:4px;font-size:12px;
+  color:#6d4c00;display:none}
+
+.tw{padding:12px 16px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;background:#fff;
+  border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.08)}
+thead th{background:#f5f7ff;color:#555;font-size:11px;font-weight:700;
+  padding:10px 12px;border-bottom:2px solid #e8eaed;text-align:center;
+  letter-spacing:.5px;text-transform:uppercase}
+tbody td{padding:7px 12px;border-bottom:1px solid #f0f2f5;
+  font-size:13px;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#fafbff}
+.cn{width:36px;text-align:right;color:#bbb;font-size:11px}
+.cs{width:80px;font-weight:700;color:#1a1a2e}
+.ck{width:100px;text-align:center}
+.cb{width:100%;padding:5px 14px;border-radius:20px;
+  border:1.5px dashed #d0d0d0;background:none;color:#bbb;
+  font-size:12px;font-weight:500;cursor:pointer;
+  transition:all .15s;white-space:nowrap;font-family:inherit}
+.cb:hover{border-color:#1a56db;color:#1a56db;border-style:solid}
+.cb.s조퇴{background:#fff3e0;border:1.5px solid #ff9800;color:#e65100}
+.cb.s결석{background:#ffebee;border:1.5px solid #f44336;color:#c62828}
+.cb.s외출{background:#e3f2fd;border:1.5px solid #2196f3;color:#1565c0}
+.cb.s발급{background:#f3e5f5;border:1.5px solid #9c27b0;color:#6a1b9a}
+.cb.s미제출{background:#fffde7;border:1.5px solid #ffc107;color:#f57f17}
+.cb.s등원{background:#e8f5e9;border:1.5px solid #66bb6a;color:#2e7d32}
+.cb.s지각{background:#fce4ec;border:1.5px solid #f48fb1;color:#880e4f}
+.cb.s하원{background:#eceff1;border:1.5px solid #90a4ae;color:#546e7a}
+.ni{border:none;outline:none;font-size:12px;color:#555;
+  width:100%;background:transparent;font-family:inherit;padding:2px 4px;border-radius:4px}
+.ni:focus{background:#f0f4ff}
+.ni::placeholder{color:#d0d0d0}
+.ca{width:70px;text-align:center}
+.nc{width:18px;height:18px;cursor:pointer;accent-color:#1a56db;vertical-align:middle}
+.sec-row td{background:#f5f7ff;color:#1565c0;font-size:11px;
+  font-weight:700;padding:6px 12px;letter-spacing:.5px}
+
+#ov{position:fixed;inset:0;z-index:999;display:none}
+#pop{position:fixed;background:#fff;border-radius:14px;
+  box-shadow:0 8px 32px rgba(0,0,0,.16);padding:6px;
+  z-index:1000;display:none;min-width:150px;
+  animation:pi .15s ease}
+@keyframes pi{from{opacity:0;transform:scale(.9) translateY(-4px)}to{opacity:1;transform:scale(1)}}
+.ph{padding:8px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:4px}
+.pt{font-size:10px;color:#aaa;margin-bottom:2px}
+.ps{font-size:18px;font-weight:800;color:#1a1a2e}
+.pi{display:flex;align-items:center;gap:10px;padding:9px 14px;
+  border-radius:8px;background:none;border:none;width:100%;
+  text-align:left;cursor:pointer;font-size:14px;
+  font-family:inherit;color:#222;transition:background .12s}
+.pi:hover{background:#f5f7ff}
+.pd{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.d조퇴{background:#ff9800}.d결석{background:#f44336}
+.d외출{background:#2196f3}.d발급{background:#9c27b0}
+.d미제출{background:#ffc107}
+.d등원{background:#66bb6a}.d지각{background:#f48fb1}.d하원{background:#90a4ae}
+.pdv{height:1px;background:#f0f0f0;margin:4px 0}
+.pcl{color:#aaa}.pcl:hover{background:#fff5f5!important;color:#f44336}
+
+@media(max-width:600px){
+  .tab{padding:9px 14px;font-size:12px}
+  .rnd{padding:5px 14px;font-size:12px}
+  tbody td{padding:6px 8px;font-size:12px}
+  .cb{padding:4px 10px;font-size:11px}
+  .rounds{top:86px}
+  .stats{top:128px}
+}
+
+.hd-btn{padding:5px 14px;border-radius:6px;border:1.5px solid rgba(255,255,255,.5);
+  background:rgba(255,255,255,.12);color:#fff;font-size:13px;
+  cursor:pointer;font-family:inherit;transition:all .15s;font-weight:600}
+.hd-btn:hover{background:rgba(255,255,255,.25);border-color:#fff}
+.print-btn{padding:5px 14px;border-radius:6px;border:1.5px solid rgba(255,255,255,.5);
+  background:rgba(255,255,255,.12);color:#fff;font-size:13px;
+  cursor:pointer;font-family:inherit;transition:all .15s;font-weight:600}
+.print-btn:hover{background:rgba(255,255,255,.25);border-color:#fff}
+
+/* 발급 시트 모달 */
+#iss-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;
+  display:none;align-items:flex-start;justify-content:center;padding:20px 12px;overflow-y:auto}
+#iss-modal.open{display:flex}
+.iss-add-row{display:flex;gap:8px;margin:12px 0 8px}
+.iss-input{flex:1;border:1.5px solid #d0d0d0;border-radius:8px;padding:8px 12px;
+  font-size:13px;outline:none;font-family:inherit}
+.iss-input:focus{border-color:#1a56db}
+#iss-list{max-height:320px;overflow-y:auto;border:1px solid #e8eaed;border-radius:8px;margin-top:4px}
+.iss-item{display:flex;align-items:center;justify-content:space-between;
+  padding:9px 14px;border-bottom:1px solid #f0f0f0;font-size:13px}
+.iss-item:last-child{border-bottom:none}
+.iss-item-seat{font-weight:700;color:#1a1a2e;font-family:monospace;font-size:14px}
+.iss-del{background:none;border:none;color:#ef9a9a;cursor:pointer;
+  font-size:16px;padding:2px 6px;border-radius:4px;transition:all .12s}
+.iss-del:hover{background:#ffebee;color:#c62828}
+.iss-empty{padding:20px;text-align:center;color:#aaa;font-size:13px}
+
+/* 가져오기 모달 */
+#imp-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;
+  display:none;align-items:flex-start;justify-content:center;padding:20px 12px;overflow-y:auto}
+#imp-modal.open{display:flex}
+.imp-ta{width:100%;height:180px;border:1.5px solid #d0d0d0;border-radius:8px;
+  padding:10px;font-size:12px;font-family:monospace;resize:vertical;
+  margin-top:8px;outline:none;transition:border-color .15s}
+.imp-ta:focus{border-color:#1a56db}
+.imp-result{margin-top:10px;padding:10px 14px;border-radius:8px;
+  background:#f5f7ff;font-size:13px;color:#333;display:none;line-height:1.8}
+.imp-result.ok{background:#e8f5e9;color:#2e7d32}
+.imp-result.warn{background:#fff8e1;color:#6d4c00}
+
+/* 설정 모달 */
+#cfg-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;
+  display:none;align-items:flex-start;justify-content:center;padding:20px 12px;overflow-y:auto}
+#cfg-modal.open{display:flex}
+.cfg-box{background:#fff;border-radius:16px;width:100%;max-width:560px;
+  padding:24px;box-shadow:0 12px 40px rgba(0,0,0,.25);margin:auto}
+.cfg-box h2{font-size:18px;font-weight:800;color:#1a1a2e;margin-bottom:4px}
+.cfg-subtitle{font-size:12px;color:#888;margin-bottom:20px}
+.cfg-status{display:flex;align-items:center;gap:8px;padding:10px 14px;
+  border-radius:10px;background:#f5f7ff;margin-bottom:20px;font-size:13px}
+.cfg-status.ok{background:#e8f5e9;color:#2e7d32}
+.cfg-status.no{background:#fff8e1;color:#f57f17}
+.cfg-step{margin-bottom:22px;padding-bottom:22px;border-bottom:1px solid #f0f0f0}
+.cfg-step:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.cfg-step h3{font-size:14px;font-weight:700;color:#1a56db;margin-bottom:8px}
+.cfg-step p,.cfg-step li{font-size:13px;color:#444;line-height:1.7}
+.cfg-step ol{padding-left:18px;margin:6px 0}
+.cfg-step li{margin-bottom:3px}
+.cfg-step code{background:#f0f4ff;color:#1565c0;padding:1px 5px;border-radius:4px;font-size:12px}
+.cfg-url-row{display:flex;gap:8px;margin-top:10px;align-items:center}
+.cfg-url-box{flex:1;background:#f5f7ff;border:1px solid #d0d8ff;border-radius:8px;
+  padding:8px 12px;font-size:12px;color:#333;word-break:break-all}
+.cfg-ta{width:100%;height:110px;border:1.5px solid #d0d0d0;border-radius:8px;
+  padding:10px;font-size:12px;font-family:monospace;resize:vertical;
+  margin-top:10px;outline:none;transition:border-color .15s}
+.cfg-ta:focus{border-color:#1a56db}
+.cfg-btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.cfg-btn{padding:8px 18px;border-radius:8px;border:none;font-size:13px;
+  font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.cfg-btn.primary{background:#1a56db;color:#fff}
+.cfg-btn.primary:hover{background:#1565c0}
+.cfg-btn.danger{background:#ffebee;color:#c62828;border:1.5px solid #f44336}
+.cfg-btn.danger:hover{background:#f44336;color:#fff}
+.cfg-btn.close{background:#f0f0f0;color:#555}
+.cfg-btn.close:hover{background:#e0e0e0}
+.cfg-msg{font-size:12px;color:#c62828;margin-top:6px;display:none}
+
+#ph{display:none}
+
+@media print{
+  .hd,.tabs,.rounds,.stats,.banner,#ov,#pop,.print-btn,#cfg-modal,#imp-modal,#iss-modal{display:none!important}
+  #ph{display:block!important}
+  body{background:#fff}
+  .tw{padding:4px 0}
+  table{box-shadow:none;border-radius:0;border:1px solid #bbb}
+  thead th{background:#eee!important;color:#333!important;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .sec-row td{background:#f0f4ff!important;color:#1565c0!important;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  tbody tr:hover td{background:none}
+  .cb{border:none!important;background:none!important;
+    padding:0;font-size:12px;font-weight:700;cursor:default}
+  .cb.s조퇴{color:#e65100!important}
+  .cb.s결석{color:#c62828!important}
+  .cb.s외출{color:#1565c0!important}
+  .cb.s발급{color:#6a1b9a!important}
+  .cb.s미제출{color:#f57f17!important}
+  .cb.s등원{color:#2e7d32!important}
+  .cb.s지각{color:#880e4f!important}
+  .cb.s하원{color:#546e7a!important}
+  .ni{border:none!important;background:none!important;padding:0;font-size:12px}
+  @page{margin:12mm;size:A4}
+}
+</style>
+</head>
+<body>
+
+<div id="ph">
+  <div style="text-align:center;padding:8px 0 10px;border-bottom:2px solid #333;margin-bottom:10px">
+    <div style="font-size:20px;font-weight:800;margin-bottom:6px">📱 휴대폰 제출 관리</div>
+    <div style="font-size:13px;color:#444;display:flex;justify-content:center;gap:20px;flex-wrap:wrap">
+      <span>날짜: <strong id="ph-date"></strong></span>
+      <span>층: <strong id="ph-floor"></strong></span>
+      <span>회차: <strong id="ph-round"></strong></span>
+    </div>
+    <div id="ph-stats" style="margin-top:6px;font-size:12px;color:#333"></div>
+  </div>
+</div>
+
+<div class="hd">
+  <h1>📱 휴대폰 제출 관리</h1>
+  <div class="hd-r">
+    <div class="conn"><span class="dot" id="dotEl"></span><span id="connTx">오프라인</span></div>
+    <input type="date" id="dp">
+    <button class="hd-btn" onclick="openIssuance()">📌 발급시트</button>
+    <button class="hd-btn" onclick="openImport()">📋 출석가져오기</button>
+    <button class="print-btn" onclick="doPrint()">🖨️ 인쇄</button>
+    <button class="hd-btn" onclick="openCfg()">⚙️ 공유설정</button>
+  </div>
+</div>
+
+<!-- 발급 시트 모달 -->
+<div id="iss-modal">
+  <div class="cfg-box">
+    <h2>📌 발급 시트</h2>
+    <p class="cfg-subtitle">이 목록에 추가된 좌석은 날짜·회차에 상관없이 항상 "발급" 상태로 표시됩니다</p>
+    <div class="iss-add-row">
+      <input type="text" class="iss-input" id="iss-input" placeholder="좌석번호 입력 (예: A238, S01)">
+      <button class="cfg-btn primary" onclick="addIssuanceSeat()">+ 추가</button>
+    </div>
+    <div id="iss-list"><div class="iss-empty">목록이 비어 있습니다</div></div>
+    <div style="text-align:right;margin-top:14px">
+      <button class="cfg-btn close" onclick="closeIssuance()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 출석 가져오기 모달 -->
+<div id="imp-modal">
+  <div class="cfg-box">
+    <h2>📋 출석 현황 가져오기</h2>
+    <p class="cfg-subtitle">학원 홈페이지 또는 엑셀에서 출석 현황을 복사하여 붙여넣으세요</p>
+    <div class="cfg-step">
+      <h3>📌 사용 방법</h3>
+      <ol>
+        <li>학원 홈페이지의 <b>원생 출석 현황</b> 표 전체 선택 (Ctrl+A 또는 마우스 드래그)</li>
+        <li>복사 (Ctrl+C)</li>
+        <li>아래 칸에 붙여넣기 (Ctrl+V)</li>
+        <li>"✅ 적용" 클릭 → 전체 층 자동 업데이트</li>
+      </ol>
+      <p style="margin-top:8px;font-size:12px;color:#888">※ 등원O+하원X → 등원 | 구분:조퇴 → 조퇴 | 구분:결석 → 결석 | 알리미:지각알림 → 지각</p>
+    </div>
+    <div class="cfg-step" style="border-bottom:none;padding-bottom:0">
+      <h3>📥 데이터 붙여넣기</h3>
+      <textarea class="imp-ta" id="imp-ta" placeholder="여기에 붙여넣기 (Ctrl+V)...&#10;&#10;NO  계열  반  그룹  학번  이름  독서실  등원  하원  구분  비고  알리미 ..."></textarea>
+      <div class="imp-result" id="imp-result"></div>
+      <div class="cfg-btns" style="margin-top:12px">
+        <button class="cfg-btn primary" onclick="processImport()">✅ 적용</button>
+        <button class="cfg-btn close" onclick="closeImport()">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 공유 설정 모달 -->
+<div id="cfg-modal">
+  <div class="cfg-box">
+    <h2>⚙️ 공유 설정</h2>
+    <p class="cfg-subtitle">PC·모바일 실시간 공유 — 로그인·설정 없이 바로 사용</p>
+
+    <div class="cfg-status" id="cfg-status-box"></div>
+
+    <div class="cfg-step">
+      <h3>📤 1단계 — Netlify에 파일 올리기 (한 번만)</h3>
+      <p>이 HTML 파일 하나를 Netlify에 올리면 어디서나 접속 가능한 URL이 생깁니다.</p>
+      <ol>
+        <li><code>drop.netlify.com</code> 접속 (구글 로그인)</li>
+        <li>이 <code>index.html</code> 파일을 페이지에 드래그</li>
+        <li>자동 생성된 URL을 공유</li>
+      </ol>
+      <div class="cfg-url-row">
+        <div class="cfg-url-box" id="cur-url-box">현재 URL 로드 중...</div>
+        <button class="cfg-btn primary" onclick="copyUrl()">🔗 URL 복사</button>
+      </div>
+    </div>
+
+    <div class="cfg-step">
+      <h3>🔑 방 코드 — 다른 기기와 공유</h3>
+      <p>아래 방 코드가 포함된 URL을 다른 기기에서 열면 자동으로 실시간 동기화됩니다.<br>로그인·설정 없이 바로 공유됩니다!</p>
+      <div style="margin-bottom:8px;font-size:12px;color:#555">현재 방 코드:</div>
+      <div class="cfg-url-row">
+        <div class="cfg-url-box" id="cur-room-key" style="font-family:monospace;font-size:15px;letter-spacing:3px;font-weight:700"></div>
+        <button class="cfg-btn primary" onclick="copyRoomKey()">🔑 코드 복사</button>
+      </div>
+      <p style="margin-top:10px;font-size:12px;color:#666">다른 방 코드로 연결하려면 아래에 입력하세요:</p>
+      <input type="text" id="roomKeyInput" placeholder="방 코드 입력..." style="border:1.5px solid #d0d0d0;border-radius:8px;padding:8px 12px;width:100%;font-size:13px;outline:none;font-family:monospace;box-sizing:border-box;margin-top:4px">
+      <div class="cfg-btns">
+        <button class="cfg-btn primary" onclick="applyRoomKey()">✅ 방 코드 변경</button>
+        <button class="cfg-btn danger" onclick="resetRoomKey()">🎲 새 코드 생성</button>
+      </div>
+    </div>
+
+    <div style="text-align:right;margin-top:4px">
+      <button class="cfg-btn close" onclick="closeCfg()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab on" data-f="2">2층</button>
+  <button class="tab" data-f="3">3층</button>
+  <button class="tab" data-f="4">4층</button>
+  <button class="tab" data-f="7">7층</button>
+</div>
+
+<div class="rounds" id="roundBar">
+  <span class="rlabel">검사 회차</span>
+  <div class="rgrp">
+    <button class="rnd on" data-r="1">1차</button>
+    <input class="rtinput" type="time" id="rt1" data-r="1" title="1차 검사 시간 설정">
+  </div>
+  <div class="rgrp">
+    <button class="rnd" data-r="2">2차</button>
+    <input class="rtinput" type="time" id="rt2" data-r="2" title="2차 검사 시간 설정">
+  </div>
+  <div class="rgrp">
+    <button class="rnd" data-r="3">3차</button>
+    <input class="rtinput" type="time" id="rt3" data-r="3" title="3차 검사 시간 설정">
+  </div>
+  <div class="rgrp">
+    <button class="rnd" data-r="4">4차</button>
+    <input class="rtinput" type="time" id="rt4" data-r="4" title="4차 검사 시간 설정">
+  </div>
+</div>
+
+<div class="banner" id="bn">
+  ⏳ 연결 중... — 잠시 후 자동으로 실시간 공유가 시작됩니다.
+</div>
+
+<div class="stats" id="st"></div>
+
+<div class="tw">
+  <table>
+    <thead><tr>
+      <th class="cn">#</th>
+      <th class="cs">좌석</th>
+      <th class="ck">상태</th>
+      <th class="ca">안내문</th>
+      <th>비고</th>
+    </tr></thead>
+    <tbody id="tb"></tbody>
+  </table>
+</div>
+
+<div id="ov"></div>
+<div id="pop">
+  <div class="ph">
+    <div class="pt">좌석 선택</div>
+    <div class="ps" id="pSeat"></div>
+  </div>
+  <button class="pi" data-s="미제출"><span class="pd d미제출"></span>미제출</button>
+  <button class="pi" data-s="조퇴"><span class="pd d조퇴"></span>조퇴</button>
+  <button class="pi" data-s="결석"><span class="pd d결석"></span>결석</button>
+  <button class="pi" data-s="외출"><span class="pd d외출"></span>외출</button>
+  <button class="pi" data-s="발급"><span class="pd d발급"></span>발급</button>
+  <button class="pi" data-s="등원"><span class="pd d등원"></span>등원</button>
+  <button class="pi" data-s="지각"><span class="pd d지각"></span>지각</button>
+  <button class="pi" data-s="하원"><span class="pd d하원"></span>하원</button>
+  <div class="pdv"></div>
+  <button class="pi pcl" data-s="">✕ &nbsp;초기화</button>
+</div>
+
+<script>
+// ── 공유 설정 (Gun.js — 계정 불필요) ─────────────────────────────
+var ROOM_KEY=(function(){
+  var m=location.hash.match(/#room=([a-z0-9]+)/);
+  if(m){localStorage.setItem('gunRoom',m[1]);return m[1];}
+  var k=localStorage.getItem('gunRoom');
+  if(!k){k=Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,10);localStorage.setItem('gunRoom',k);}
+  history.replaceState(null,'',location.pathname+location.search+'#room='+k);
+  return k;
+})();
+var gun=null,useGun=false,gunFloorToken=0,gunTimesToken=0;
+var issuanceList={};
+var ISS_KEY='iss_'+ROOM_KEY;
+try{issuanceList=JSON.parse(localStorage.getItem(ISS_KEY)||'{}');}catch(e){issuanceList={};}
+
+// ── 좌석 데이터 ──────────────────────────────────────────────────
+function g(p,f,n){
+  return Array.from({length:n},function(_,i){
+    return p+f+String(i+1).padStart(2,'0');
+  });
+}
+var SEATS={
+  "2":[{sec:"A구역",list:g('A','2',64)},{sec:"B구역",list:g('B','2',66)}],
+  "3":[{sec:"A구역",list:g('A','3',51)},{sec:"B구역",list:g('B','3',23)},
+       {sec:"C구역",list:g('C','3',20)},{sec:"D구역",list:g('D','3',63)},
+       {sec:"E구역",list:g('E','3',14)}],
+  "4":[{sec:"A구역",list:g('A','4',50)},{sec:"B구역",list:g('B','4',33)},
+       {sec:"C구역",list:g('C','4',23)},{sec:"D구역",list:g('D','4',52)},
+       {sec:"E구역",list:g('E','4',26)}],
+  "7":[{sec:"A구역",list:g('A','7',50)},{sec:"B구역",list:g('B','7',40)},
+       {sec:"C구역",list:g('C','7',54)},{sec:"D구역",list:g('D','7',26)},
+       {sec:"S구역",list:Array.from({length:14},function(_,i){return 'S'+String(i+1).padStart(2,'0');})}]
+};
+
+// ── 상태 ─────────────────────────────────────────────────────────
+var floor="2", date=today(), round="1", data={}, curSeat=null;
+
+function today(){return new Date().toISOString().split('T')[0];}
+function lsKey(){return 'att_'+date+'_r'+round+'_'+floor;}
+function rtKey(r){return 'rtime_'+date+'_r'+r;}
+
+// ── 초기화 ───────────────────────────────────────────────────────
+document.getElementById('dp').value=date;
+initGun();
+
+function initGun(){
+  document.getElementById('bn').style.display='block';
+  document.getElementById('connTx').textContent='연결 중...';
+  load('https://cdn.jsdelivr.net/npm/gun/gun.js',function(){
+    gun=Gun(['https://gun-manhattan.herokuapp.com/gun','https://peer.wallie.io/gun']);
+    useGun=true;
+    document.getElementById('dotEl').className='dot on';
+    document.getElementById('connTx').textContent='온라인';
+    document.getElementById('bn').style.display='none';
+    subGunTimes();
+    subGunFloor();
+    subGunIssuance();
+  });
+}
+
+function subGunIssuance(){
+  gun.get(ROOM_KEY).get('issuance').map().on(function(val,sid){
+    if(!sid||typeof sid!=='string'||sid==='_')return;
+    var prev=!!issuanceList[sid];
+    if(val===true){issuanceList[sid]=true;}else{delete issuanceList[sid];}
+    localStorage.setItem(ISS_KEY,JSON.stringify(issuanceList));
+    if(prev!==!!issuanceList[sid]){
+      updBtn(sid,issuanceList[sid]?'발급':((data[sid]||{}).status||''));
+      updStats();
+    }
+  });
+}
+
+function load(url,cb){
+  var s=document.createElement('script');
+  s.src=url; s.onload=cb; document.head.appendChild(s);
+}
+
+function gunDateKey(){return date.replace(/-/g,'');}
+function subGunTimes(){
+  var token=++gunTimesToken;
+  gun.get(ROOM_KEY).get('att').get(gunDateKey()).get('times').map().on(function(val,rk){
+    if(token!==gunTimesToken)return;
+    if(typeof rk!=='string'||!/^r[1-4]$/.test(rk))return;
+    var r=rk.slice(1);
+    var el=document.getElementById('rt'+r);
+    if(el&&!el.matches(':focus'))el.value=val||'';
+    if(val)localStorage.setItem(rtKey(r),val); else localStorage.removeItem(rtKey(r));
+  });
+}
+function subGunFloor(){
+  var token=++gunFloorToken;
+  data={};
+  render(true);
+  gun.get(ROOM_KEY).get('att').get(gunDateKey()).get('r'+round).get(floor).map().on(function(sd,sid){
+    if(token!==gunFloorToken)return;
+    if(!sd||typeof sd!=='object')return;
+    var prev=data[sid]||{};
+    var next={};
+    if(sd.status&&sd.status!==null)next.status=sd.status;
+    if(sd.note&&sd.note!==null)next.note=sd.note;
+    if(sd.notice===true)next.notice=true;
+    if(Object.keys(next).length)data[sid]=next; else delete data[sid];
+    var ps=(prev.status||''),ns=(next.status||'');
+    if(ps!==ns)updBtn(sid,ns);
+    if(!!prev.notice!==!!next.notice)updNotice(sid,!!next.notice);
+    updStats();
+  });
+}
+
+// ── localStorage ─────────────────────────────────────────────────
+function lsLoad(){try{return JSON.parse(localStorage.getItem(lsKey())||'{}');}catch(e){return{};}}
+function lsSave(){localStorage.setItem(lsKey(),JSON.stringify(data));}
+
+// ── 회차 시간 기록 & 표시 ─────────────────────────────────────────
+function nowTime(){
+  var d=new Date();
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+
+function markRoundTime(r){
+  // 이미 시간이 설정돼 있으면 덮어쓰지 않음 (수동 입력 우선)
+  var key=rtKey(r);
+  if(!localStorage.getItem(key)){
+    var t=nowTime();
+    localStorage.setItem(key,t);
+    var el=document.getElementById('rt'+r);
+    if(el)el.value=t;
+  }
+}
+
+function updRoundTimes(){
+  for(var i=1;i<=4;i++){
+    var el=document.getElementById('rt'+i);
+    if(!el)continue;
+    var t=localStorage.getItem(rtKey(String(i)));
+    el.value=t||'';
+  }
+}
+
+function saveRoundTime(r,val){
+  if(val){localStorage.setItem(rtKey(r),val);}
+  else{localStorage.removeItem(rtKey(r));}
+  if(useGun&&gun){
+    gun.get(ROOM_KEY).get('att').get(gunDateKey()).get('times').get('r'+r).put(val||null);
+  }
+}
+
+// 회차 시간 input 이벤트 바인딩
+document.querySelectorAll('.rtinput').forEach(function(inp){
+  inp.addEventListener('change',function(){
+    saveRoundTime(inp.dataset.r, inp.value);
+  });
+});
+
+// ── helpers ───────────────────────────────────────────────────────
+function allSeats(){
+  var r=[];
+  (SEATS[floor]||[]).forEach(function(sec){sec.list.forEach(function(s){r.push(s);});});
+  return r;
+}
+function ea(s){return s.replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function eh(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── 렌더링 ───────────────────────────────────────────────────────
+function render(full){
+  if(!full){updStats();return;}
+  var sections=SEATS[floor]||[];
+  var tb=document.getElementById('tb');
+  var rows=[];
+  var idx=0;
+
+  sections.forEach(function(sec){
+    rows.push('<tr class="sec-row"><td colspan="5">— '+eh(sec.sec)+' ('+sec.list.length+'석) —</td></tr>');
+    sec.list.forEach(function(sid){
+      idx++;
+      var d=data[sid]||{};
+      var st=issuanceList[sid]?'발급':(d.status||'');
+      var no=d.note||'';
+      var nv=d.notice||false;
+      var sc=st?' s'+st:'';
+      rows.push(
+        '<tr>'+
+        '<td class="cn">'+idx+'</td>'+
+        '<td class="cs">'+eh(sid)+'</td>'+
+        '<td class="ck"><button class="cb'+sc+'" data-seat="'+sid+'">'+eh(st||'—')+'</button></td>'+
+        '<td class="ca"><input type="checkbox" class="nc"'+(nv?' checked':'')+' data-seat="'+sid+'"></td>'+
+        '<td><input class="ni" type="text" placeholder="비고" value="'+ea(no)+'" data-seat="'+sid+'"></td>'+
+        '</tr>'
+      );
+    });
+  });
+
+  tb.innerHTML=rows.join('');
+
+  tb.querySelectorAll('.cb').forEach(function(b){
+    b.addEventListener('click',function(e){openPop(e,b.dataset.seat);});
+  });
+  tb.querySelectorAll('.nc').forEach(function(cb){
+    cb.addEventListener('change',function(){saveNotice(cb.dataset.seat,cb.checked);});
+  });
+  tb.querySelectorAll('.ni').forEach(function(inp){
+    var t;
+    inp.addEventListener('input',function(){
+      clearTimeout(t);t=setTimeout(function(){saveNote(inp.dataset.seat,inp.value);},700);
+    });
+    inp.addEventListener('blur',function(){clearTimeout(t);saveNote(inp.dataset.seat,inp.value);});
+  });
+
+  updStats();
+}
+
+function updBtn(sid,st){
+  var b=document.querySelector('.cb[data-seat="'+sid+'"]');
+  if(!b)return;
+  b.className='cb'+(st?' s'+st:'');
+  b.textContent=st||'—';
+}
+
+function updNotice(sid,val){
+  var cb=document.querySelector('.nc[data-seat="'+sid+'"]');
+  if(cb)cb.checked=!!val;
+}
+
+function updStats(){
+  var cnt={미제출:0,조퇴:0,결석:0,외출:0,발급:0,등원:0,지각:0,하원:0};
+  allSeats().forEach(function(sid){
+    var s=issuanceList[sid]?'발급':((data[sid]||{}).status||'');
+    if(s&&cnt.hasOwnProperty(s))cnt[s]++;
+  });
+  var h='<span class="slabel">현황:</span>';
+  Object.keys(cnt).forEach(function(k){
+    h+='<span class="chip c'+k+'">'+k+' <strong>'+cnt[k]+'</strong></span>';
+  });
+  document.getElementById('st').innerHTML=h;
+}
+
+// ── 팝업 ─────────────────────────────────────────────────────────
+function openPop(e,sid){
+  e.stopPropagation();
+  curSeat=sid;
+  document.getElementById('pSeat').textContent=sid;
+  var pop=document.getElementById('pop');
+  var ov=document.getElementById('ov');
+  pop.style.display='block';
+  ov.style.display='block';
+  var r=e.currentTarget.getBoundingClientRect();
+  var W=160,H=290,top=r.bottom+6,left=r.left;
+  if(left+W>window.innerWidth-8)left=window.innerWidth-W-8;
+  if(top+H>window.innerHeight-8)top=r.top-H-6;
+  if(left<8)left=8;if(top<8)top=8;
+  pop.style.top=top+'px';pop.style.left=left+'px';
+}
+
+function closePop(){
+  document.getElementById('pop').style.display='none';
+  document.getElementById('ov').style.display='none';
+  curSeat=null;
+}
+
+document.getElementById('ov').addEventListener('click',closePop);
+
+document.querySelectorAll('.pi').forEach(function(b){
+  b.addEventListener('click',function(){
+    if(!curSeat)return;
+    setStatus(curSeat,b.dataset.s);
+    closePop();
+  });
+});
+
+// ── 데이터 저장 ───────────────────────────────────────────────────
+function setStatus(sid,st){
+  if(!data[sid])data[sid]={};
+  if(st){
+    data[sid].status=st;
+    markRoundTime(round); // 이 회차에 첫 저장이면 시작 시간 기록
+  }else{delete data[sid].status;if(!data[sid].note)delete data[sid];}
+  updBtn(sid,st);
+  updStats();
+  if(useGun&&gun){
+    gun.get(ROOM_KEY).get('att').get(gunDateKey()).get('r'+round).get(floor).get(sid).put({status:st||null});
+  }else{lsSave();}
+}
+
+function saveNote(sid,note){
+  if(!data[sid])data[sid]={};
+  if(note){data[sid].note=note;}
+  else{delete data[sid].note;if(!data[sid].status&&!data[sid].notice)delete data[sid];}
+  if(useGun&&gun){
+    gun.get(ROOM_KEY).get('att').get(gunDateKey()).get('r'+round).get(floor).get(sid).put({note:note||null});
+  }else{lsSave();}
+}
+
+function saveNotice(sid,checked){
+  if(!data[sid])data[sid]={};
+  if(checked){data[sid].notice=true;}
+  else{delete data[sid].notice;if(!data[sid].status&&!data[sid].note)delete data[sid];}
+  if(useGun&&gun){
+    gun.get(ROOM_KEY).get('att').get(gunDateKey()).get('r'+round).get(floor).get(sid).put({notice:checked?true:null});
+  }else{lsSave();}
+}
+
+// ── 탭 & 회차 & 날짜 ─────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on');
+    floor=b.dataset.f;
+    if(useGun&&gun){data={};subGunFloor();}
+    else{data=lsLoad();render(true);}
+  });
+});
+
+document.querySelectorAll('.rnd').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.rnd').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on');
+    round=b.dataset.r;
+    if(useGun&&gun){data={};subGunFloor();}
+    else{data=lsLoad();render(true);}
+  });
+});
+
+document.getElementById('dp').addEventListener('change',function(){
+  date=this.value;
+  updRoundTimes();
+  if(useGun&&gun){data={};subGunTimes();subGunFloor();}
+  else{data=lsLoad();render(true);}
+});
+
+// ── 공유 설정 모달 ───────────────────────────────────────────────
+function openCfg(){
+  var sb=document.getElementById('cfg-status-box');
+  if(useGun&&gun){
+    sb.className='cfg-status ok';
+    sb.textContent='✅ 온라인 — 실시간 공유 중';
+  }else{
+    sb.className='cfg-status no';
+    sb.textContent='⏳ 연결 중... — 잠시 후 자동 공유됩니다';
+  }
+  document.getElementById('cur-url-box').textContent=location.href;
+  document.getElementById('cur-room-key').textContent=ROOM_KEY;
+  document.getElementById('cfg-modal').classList.add('open');
+}
+
+function closeCfg(){
+  document.getElementById('cfg-modal').classList.remove('open');
+}
+
+function copyUrl(){
+  var url=location.href;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(url).then(function(){alert('URL이 복사되었습니다!\n\n'+url);});
+  }else{
+    prompt('아래 URL을 복사하세요:',url);
+  }
+}
+
+function copyRoomKey(){
+  var key=ROOM_KEY;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(key).then(function(){alert('방 코드가 복사되었습니다!\n\n'+key);});
+  }else{prompt('아래 방 코드를 복사하세요:',key);}
+}
+
+function applyRoomKey(){
+  var newKey=document.getElementById('roomKeyInput').value.trim().toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(!newKey){alert('방 코드를 입력하세요.');return;}
+  localStorage.setItem('gunRoom',newKey);
+  alert('방 코드가 변경되었습니다. 페이지를 새로고침합니다.');
+  location.replace(location.pathname+location.search+'#room='+newKey);
+}
+
+function resetRoomKey(){
+  if(!confirm('새 방 코드를 생성하면 기존 방과 연결이 끊어집니다.\n계속하시겠습니까?'))return;
+  localStorage.removeItem('gunRoom');
+  location.replace(location.pathname+location.search);
+}
+
+// 모달 바깥 클릭 시 닫기
+document.getElementById('cfg-modal').addEventListener('click',function(e){
+  if(e.target===this)closeCfg();
+});
+
+// ── 발급 시트 ────────────────────────────────────────────────────
+function openIssuance(){
+  renderIssuanceList();
+  document.getElementById('iss-input').value='';
+  document.getElementById('iss-modal').classList.add('open');
+}
+function closeIssuance(){
+  document.getElementById('iss-modal').classList.remove('open');
+  render(true);
+}
+
+function renderIssuanceList(){
+  var listEl=document.getElementById('iss-list');
+  var seats=Object.keys(issuanceList).sort();
+  if(!seats.length){listEl.innerHTML='<div class="iss-empty">목록이 비어 있습니다</div>';return;}
+  listEl.innerHTML=seats.map(function(sid){
+    return '<div class="iss-item">'+
+      '<span class="iss-item-seat">'+eh(sid)+'</span>'+
+      '<button class="iss-del" onclick="removeIssuanceSeat(\''+ea(sid)+'\')">✕</button>'+
+    '</div>';
+  }).join('');
+}
+
+function addIssuanceSeat(){
+  var inp=document.getElementById('iss-input');
+  var raw=inp.value.trim().toUpperCase();
+  if(!raw){return;}
+  var sids=raw.split(/[\s,]+/).filter(Boolean);
+  sids.forEach(function(sid){
+    issuanceList[sid]=true;
+    if(useGun&&gun){gun.get(ROOM_KEY).get('issuance').get(sid).put(true);}
+  });
+  localStorage.setItem(ISS_KEY,JSON.stringify(issuanceList));
+  inp.value='';
+  renderIssuanceList();
+  render(true);
+  updStats();
+}
+
+function removeIssuanceSeat(sid){
+  delete issuanceList[sid];
+  localStorage.setItem(ISS_KEY,JSON.stringify(issuanceList));
+  if(useGun&&gun){gun.get(ROOM_KEY).get('issuance').get(sid).put(null);}
+  renderIssuanceList();
+  updBtn(sid,(data[sid]||{}).status||'');
+  updStats();
+}
+
+document.getElementById('iss-modal').addEventListener('click',function(e){
+  if(e.target===this)closeIssuance();
+});
+document.getElementById('iss-input').addEventListener('keydown',function(e){
+  if(e.key==='Enter')addIssuanceSeat();
+});
+
+// ── 출석 가져오기 ─────────────────────────────────────────────────
+function openImport(){
+  document.getElementById('imp-ta').value='';
+  document.getElementById('imp-result').style.display='none';
+  document.getElementById('imp-result').className='imp-result';
+  document.getElementById('imp-modal').classList.add('open');
+}
+function closeImport(){
+  document.getElementById('imp-modal').classList.remove('open');
+}
+
+function processImport(){
+  var raw=document.getElementById('imp-ta').value;
+  var resEl=document.getElementById('imp-result');
+  if(!raw.trim()){resEl.textContent='데이터를 붙여넣어 주세요.';resEl.className='imp-result warn';resEl.style.display='block';return;}
+
+  var lines=raw.split(/\r?\n/);
+  // 헤더 행 탐색 (독서실 컬럼 찾기)
+  var headerIdx=-1,headers=[];
+  for(var i=0;i<Math.min(10,lines.length);i++){
+    var cols=lines[i].split('\t');
+    var found=cols.findIndex(function(c){return c.trim()==='독서실';});
+    if(found>=0){headerIdx=i;headers=cols.map(function(c){return c.trim();});break;}
+  }
+  if(headerIdx<0){
+    resEl.textContent='⚠️ "독서실" 컬럼을 찾을 수 없습니다. 올바른 출석 현황 데이터를 붙여넣으세요.';
+    resEl.className='imp-result warn';resEl.style.display='block';return;
+  }
+
+  var ci={
+    독서실:headers.indexOf('독서실'),
+    등원:headers.indexOf('등원'),
+    하원:headers.indexOf('하원'),
+    구분:headers.indexOf('구분'),
+    알리미:headers.indexOf('알리미')
+  };
+
+  // {floor: {seatId: status}} 수집
+  var updates={};
+  for(var i=headerIdx+1;i<lines.length;i++){
+    var cols=lines[i].split('\t');
+    if(cols.length<3)continue;
+    var 독서실v=ci.독서실>=0?cols[ci.독서실].trim():'';
+    if(!독서실v)continue;
+    var 등원v=ci.등원>=0?cols[ci.등원].trim():'';
+    var 하원v=ci.하원>=0?cols[ci.하원].trim():'';
+    var 구분v=ci.구분>=0?cols[ci.구분].trim():'';
+    var 알리미v=ci.알리미>=0?cols[ci.알리미].trim():'';
+
+    // 층 파싱
+    var flM=독서실v.match(/(\d)층/);
+    if(!flM)continue;
+    var fl=flM[1];
+    // 좌석 파싱: "의","구역" 제거 후 마지막 토큰
+    var parts=독서실v.replace(/의/g,' ').replace(/구역/g,' ').split(/\s+/).filter(Boolean);
+    var seatId=parts[parts.length-1];
+    if(!seatId)continue;
+
+    // 상태 결정
+    var st='';
+    if(구분v.indexOf('결석')>=0||알리미v.indexOf('결석알림')>=0)st='결석';
+    else if(구분v.indexOf('조퇴')>=0)st='조퇴';
+    else if(구분v.indexOf('지각')>=0||알리미v.indexOf('지각알림')>=0)st='지각';
+    else if(등원v&&하원v)st='하원';   // 등원O 하원O → 정상하원
+    else if(등원v&&!하원v)st='등원'; // 등원O 하원X → 재실 중
+
+    if(!st)continue;
+    if(!updates[fl])updates[fl]={};
+    updates[fl][seatId]=st;
+  }
+
+  // 각 층 localStorage 로드 → 적용 → 저장 + Gun push
+  var total=0;
+  Object.keys(updates).forEach(function(fl){
+    var key='att_'+date+'_r'+round+'_'+fl;
+    var d;
+    try{d=JSON.parse(localStorage.getItem(key)||'{}');}catch(e){d={};}
+    Object.keys(updates[fl]).forEach(function(sid){
+      var st=updates[fl][sid];
+      if(!d[sid])d[sid]={};
+      d[sid].status=st;
+      total++;
+      if(useGun&&gun){
+        gun.get(ROOM_KEY).get('att').get(gunDateKey()).get('r'+round).get(fl).get(sid).put({status:st});
+      }
+    });
+    localStorage.setItem(key,JSON.stringify(d));
+  });
+
+  // 현재 층 다시 로드
+  data=lsLoad();
+  render(true);
+
+  var msg='✅ '+total+'명의 상태를 적용했습니다.';
+  var flList=Object.keys(updates).map(function(f){return f+'층 '+Object.keys(updates[f]).length+'명';}).join(', ');
+  if(flList)msg+='\n('+flList+')';
+  resEl.textContent=msg;
+  resEl.className='imp-result ok';
+  resEl.style.display='block';
+}
+
+document.getElementById('imp-modal').addEventListener('click',function(e){
+  if(e.target===this)closeImport();
+});
+
+// ── 인쇄 ─────────────────────────────────────────────────────────
+function doPrint(){
+  // 인쇄 헤더 정보 채우기
+  var rtEl=document.getElementById('rt'+round);
+  var rtVal=rtEl?rtEl.value:'';
+  var timeStr=rtVal?(' — '+rtVal):'';
+  document.getElementById('ph-date').textContent=date;
+  document.getElementById('ph-floor').textContent=floor+'층';
+  document.getElementById('ph-round').textContent=round+'차 검사'+timeStr;
+
+  // 현황 통계
+  var cnt={조퇴:0,결석:0,외출:0,발급:0,미제출:0};
+  Object.keys(data).forEach(function(k){
+    var s=(data[k]||{}).status;
+    if(s&&cnt.hasOwnProperty(s))cnt[s]++;
+  });
+  var total=Object.keys(cnt).reduce(function(a,k){return a+cnt[k];},0);
+  var parts=Object.keys(cnt).filter(function(k){return cnt[k]>0;})
+    .map(function(k){return k+' '+cnt[k]+'건';});
+  document.getElementById('ph-stats').textContent=
+    '[ 총 '+total+'건'+( parts.length?' : '+parts.join(' / '):'' )+' ]';
+
+  window.print();
+}
+</script>
+</body>
+</html>
