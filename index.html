@@ -879,11 +879,10 @@ function processImport(){
     var flM=독서실v.match(/(\d)층/);
     if(!flM)continue;
     var fl=flM[1];
-    // 좌석 파싱: "[A]구역 [7]번" → "A307" 형식으로 변환
-    var secM=독서실v.match(/([A-Za-z])\s*구역/);
-    var numM=독서실v.match(/(\d+)\s*번/);
-    if(!secM||!numM)continue;
-    var seatId=secM[1].toUpperCase()+fl+String(parseInt(numM[1],10)).padStart(2,'0');
+    // 좌석 파싱: "3층 D D348" → 마지막 토큰이 좌석 ID (D348, B221, S01 등)
+    var tokens=독서실v.trim().split(/\s+/);
+    var seatId=tokens[tokens.length-1].toUpperCase();
+    if(!seatId||!/^[A-Z]\d+$/.test(seatId))continue;
 
     // 상태 결정
     var st='';
