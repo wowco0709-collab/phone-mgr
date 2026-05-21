@@ -49,14 +49,14 @@ input[type=date]{padding:5px 10px;border-radius:6px;border:none;
   position:sticky;top:136px;z-index:197}
 .slabel{font-size:11px;color:#888;margin-right:2px}
 .chip{padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600}
-.c조퇴{background:#fff3e0;color:#e65100}
-.c결석{background:#ffebee;color:#c62828}
-.c외출{background:#e3f2fd;color:#1565c0}
-.c발급{background:#f3e5f5;color:#6a1b9a}
-.c미제출{background:#fffde7;color:#f57f17}
-.c등원{background:#e8f5e9;color:#2e7d32}
-.c지각{background:#fce4ec;color:#880e4f}
-.c하원{background:#eceff1;color:#546e7a}
+.c조퇴{background:#f5f5f5;color:#757575}
+.c결석{background:#f5f5f5;color:#757575}
+.c외출{background:#f5f5f5;color:#757575}
+.c발급{background:#f5f5f5;color:#757575}
+.c미제출{background:#ef4444;color:#fff}
+.c등원{background:#f5f5f5;color:#555}
+.c지각{background:#f5f5f5;color:#757575}
+.c하원{background:#eeeeee;color:#888}
 
 .banner{margin:10px 16px;padding:10px 14px;background:#fff8e1;
   border-left:4px solid #ffc107;border-radius:4px;font-size:12px;
@@ -80,14 +80,14 @@ tbody tr:hover td{background:#fafbff}
   font-size:12px;font-weight:500;cursor:pointer;
   transition:all .15s;white-space:nowrap;font-family:inherit}
 .cb:hover{border-color:#1a56db;color:#1a56db;border-style:solid}
-.cb.s조퇴{background:#fff3e0;border:1.5px solid #ff9800;color:#e65100}
-.cb.s결석{background:#ffebee;border:1.5px solid #f44336;color:#c62828}
-.cb.s외출{background:#e3f2fd;border:1.5px solid #2196f3;color:#1565c0}
-.cb.s발급{background:#f3e5f5;border:1.5px solid #9c27b0;color:#6a1b9a}
-.cb.s미제출{background:#fffde7;border:1.5px solid #ffc107;color:#f57f17}
-.cb.s등원{background:#e8f5e9;border:1.5px solid #66bb6a;color:#2e7d32}
-.cb.s지각{background:#fce4ec;border:1.5px solid #f48fb1;color:#880e4f}
-.cb.s하원{background:#eceff1;border:1.5px solid #90a4ae;color:#546e7a}
+.cb.s조퇴{background:#f5f5f5;border:1.5px solid #bdbdbd;color:#757575}
+.cb.s결석{background:#f5f5f5;border:1.5px solid #bdbdbd;color:#757575}
+.cb.s외출{background:#f5f5f5;border:1.5px solid #bdbdbd;color:#757575}
+.cb.s발급{background:#f5f5f5;border:1.5px solid #bdbdbd;color:#757575}
+.cb.s미제출{background:#ef4444;border:1.5px solid #ef4444;color:#fff}
+.cb.s등원{background:#f0f0f0;border:1.5px solid #bdbdbd;color:#555}
+.cb.s지각{background:#f5f5f5;border:1.5px solid #bdbdbd;color:#757575}
+.cb.s하원{background:#eeeeee;border:1.5px solid #d0d0d0;color:#888}
 .ni{border:none;outline:none;font-size:12px;color:#555;
   width:100%;background:transparent;font-family:inherit;padding:2px 4px;border-radius:4px}
 .ni:focus{background:#f0f4ff}
@@ -112,10 +112,10 @@ tbody tr:hover td{background:#fafbff}
   font-family:inherit;color:#222;transition:background .12s}
 .pi:hover{background:#f5f7ff}
 .pd{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.d조퇴{background:#ff9800}.d결석{background:#f44336}
-.d외출{background:#2196f3}.d발급{background:#9c27b0}
-.d미제출{background:#ffc107}
-.d등원{background:#66bb6a}.d지각{background:#f48fb1}.d하원{background:#90a4ae}
+.d조퇴{background:#bdbdbd}.d결석{background:#9e9e9e}
+.d외출{background:#bdbdbd}.d발급{background:#bdbdbd}
+.d미제출{background:#ef4444}
+.d등원{background:#9e9e9e}.d지각{background:#bdbdbd}.d하원{background:#d0d0d0}
 .pdv{height:1px;background:#f0f0f0;margin:4px 0}
 .pcl{color:#aaa}.pcl:hover{background:#fff5f5!important;color:#f44336}
 
@@ -496,9 +496,13 @@ function onRemoteUpdate(p){
   }
   if(p.iss){issuanceList=p.iss;localStorage.setItem(ISS_KEY,JSON.stringify(issuanceList));}
   var remKey='att_'+p.dt+'_r'+p.rnd+'_'+p.fl;
-  localStorage.setItem(remKey,JSON.stringify(p.d));
-  if(p.fl===floor&&p.dt===date&&p.rnd===round){data=p.d;render(true);}
-  else{updStats();}
+  if(p.d&&Object.keys(p.d).length>0){
+    localStorage.setItem(remKey,JSON.stringify(p.d));
+    if(p.fl===floor&&p.dt===date&&p.rnd===round){data=p.d;render(true);}
+    else{updStats();}
+  }else if(p.fl===floor&&p.dt===date&&p.rnd===round){
+    render(true);
+  }
 }
 
 // ── localStorage ─────────────────────────────────────────────────
@@ -875,10 +879,11 @@ function processImport(){
     var flM=독서실v.match(/(\d)층/);
     if(!flM)continue;
     var fl=flM[1];
-    // 좌석 파싱: "의","구역" 제거 후 마지막 토큰
-    var parts=독서실v.replace(/의/g,' ').replace(/구역/g,' ').split(/\s+/).filter(Boolean);
-    var seatId=parts[parts.length-1];
-    if(!seatId)continue;
+    // 좌석 파싱: "[A]구역 [7]번" → "A307" 형식으로 변환
+    var secM=독서실v.match(/([A-Za-z])\s*구역/);
+    var numM=독서실v.match(/(\d+)\s*번/);
+    if(!secM||!numM)continue;
+    var seatId=secM[1].toUpperCase()+fl+String(parseInt(numM[1],10)).padStart(2,'0');
 
     // 상태 결정
     var st='';
